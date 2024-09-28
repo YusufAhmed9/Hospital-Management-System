@@ -1,8 +1,7 @@
 package org.example;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Patient extends User {
@@ -122,8 +121,49 @@ public class Patient extends User {
         hospital.displayClinics(choice);
     }
 
-    private void reserve() {
+    private void reserve(Connection conn) throws SQLException {
+        Hospital.displayHospitals(conn);
+        Scanner scanner = new Scanner(System.in);
+        while (true) {
+            System.out.print("Hospital ID To Reserve: ");
+            int hospitalId = scanner.nextInt();
+            Hospital hospital = Hospital.getHospital(conn, hospitalId);
+            if (hospital != null) {
+                int duration;
+                float price;
+                while (true) {
+                    System.out.print("Duration In Days: ");
+                    duration = scanner.nextInt();
+                    if (duration > 0) {
+                        break;
+                    }
+                    System.out.println("Duration Can't Be Less Than Or Equal To 0.");
+                }
+                price = duration * hospital.getReservationPrice();
+                Reservation reservation = new Reservation(hospital.getId(), getId(), duration, price);
+                Reservation.createReservation(conn, reservation);
+                System.out.println("The Price Of Your Reservation At " + hospital.getName() + " Is " + price);
+                break;
+            }
+            else {
+                System.out.println("No Hospital With That ID.");
+            }
+        }
+    }
 
+    private void deleteReservation(Connection conn) throws SQLException {
+        showReservations(conn);
+        Scanner scanner = new Scanner(System.in);
+        while (true) {
+            System.out.print("Reservation ID To Delete: ");
+            int hospitalId = scanner.nextInt();
+            Reservation reservation = Reservation.getReservation(conn, hospitalId);
+            if (reservation != null) {
+                reservation.delete(conn);
+                break;
+            }
+            System.out.println("No Reservation With That ID.");
+        }
     }
 
     private void writeReview(Connection conn) throws SQLException {
@@ -178,6 +218,37 @@ public class Patient extends User {
         }
     }
 
+    private ArrayList<Reservation> getReservations(Connection conn) throws SQLException {
+        ArrayList<Reservation> reservations = new ArrayList<Reservation>();
+        Statement statement = conn.createStatement();
+        ResultSet rs = statement.executeQuery("SELECT * FROM reservations WHERE userId = " + getId());
+        while (rs.next()) {
+            Reservation reservation = new Reservation(rs.getInt("id"), rs.getInt("hospitalId"), rs.getInt("userId"), rs.getInt("duration"), rs.getFloat("price"));
+            reservations.add(reservation);
+        }
+        return reservations;
+    }
+
+    private void showReservations(Connection conn) throws SQLException {
+        ArrayList<Reservation> reservations = getReservations(conn);
+        if (!reservations.isEmpty()) {
+            System.out.printf("%15s", "ID |");
+            System.out.printf("%40s", "Hospital |");
+            System.out.printf("%15s", "Duration |");
+            System.out.printf("%15s", "Price |\n");
+            for (Reservation reservation : reservations) {
+                Hospital hospital = Hospital.getHospital(conn, reservation.getHospitalId());
+                System.out.printf("%15s", reservation.getId() + " |");
+                System.out.printf("%40s", hospital.getName() + " |");
+                System.out.printf("%15s", reservation.getDuration()  + " |");
+                System.out.printf("%15s", reservation.getPrice() + " |\n");
+            }
+        }
+        else {
+            System.out.println("You Have No Reservations Yet.");
+        }
+    }
+
     public void Interface(Connection conn) throws SQLException {
         int option;
         Scanner scanner = new Scanner(System.in);
@@ -188,13 +259,14 @@ public class Patient extends User {
             System.out.println("[1]: Edit your information");
             System.out.println("[2]: View hospitals");
             System.out.println("[3]: Reserve");
-            System.out.println("[4]: Write A Review");
-            System.out.println("[5]: Show Reviews");
-            System.out.println("[6]: Log out");
+            System.out.println("[4]: Show Reservations");
+            System.out.println("[5]: Delete A Reservation");
+            System.out.println("[6]: Write A Review");
+            System.out.println("[7]: Show Reviews");
+            System.out.println("[8]: Log out");
             System.out.print("Choose an option: ");
             option = scanner.nextInt();
-
-            if(option > 6 || option < 1){
+            if(option > 8 || option < 1){
                 System.out.println("Error: Please enter a valid option\n");
                 continue;
             }
@@ -209,13 +281,24 @@ public class Patient extends User {
         }
         else if (option == 3) {
             if (Hospital.count(conn) > 0) {
-                reserve();
+                reserve(conn);
             }
             else {
                 System.out.println("No Hospitals To Reserve.");
             }
         }
         else if (option == 4) {
+            showReservations(conn);
+        }
+        else if (option == 5) {
+            if (!getReservations(conn).isEmpty()) {
+                deleteReservation(conn);
+            }
+            else {
+                System.out.println("You Have No Reservations To Delete.");
+            }
+        }
+        else if (option == 6) {
             if (Hospital.count(conn) > 0) {
                 writeReview(conn);
             }
@@ -223,7 +306,7 @@ public class Patient extends User {
                 System.out.println("No Hospitals To Review.");
             }
         }
-        else if (option == 5) {
+        else if (option == 7) {
             if (Hospital.count(conn) > 0) {
                 showReviews(conn);
             }
