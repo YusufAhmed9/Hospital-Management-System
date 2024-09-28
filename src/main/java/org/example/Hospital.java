@@ -1,13 +1,14 @@
 package org.example;
 
 import java.sql.*;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 public class Hospital {
     private int id;
     private String name;
     private float reservationPrice;
-    private int rating;
+    private float rating;
     private ArrayList <Speciality>specialities = new ArrayList();
 
     Hospital(String name, float reservationPrice) {
@@ -16,13 +17,13 @@ public class Hospital {
         setReservationPrice(reservationPrice);
     }
 
-    Hospital(String name, float reservationPrice, int rating) {
+    Hospital(String name, float reservationPrice, float rating) {
         setName(name);
         setRating(rating);
         setReservationPrice(reservationPrice);
     }
 
-    Hospital(int id, String name, float reservationPrice, int rating) {
+    Hospital(int id, String name, float reservationPrice, float rating) {
         setId(id);
         setName(name);
         setRating(rating);
@@ -53,11 +54,11 @@ public class Hospital {
         return reservationPrice;
     }
 
-    public void setRating(int rating) {
+    public void setRating(float rating) {
         this.rating = rating;
     }
 
-    public int getRating() {
+    public float getRating() {
         return rating;
     }
 
@@ -83,7 +84,7 @@ public class Hospital {
         PreparedStatement preparedStatement = conn.prepareStatement("INSERT INTO hospitals(name, reservationPrice, rating) values(?, ?, ?)");
         preparedStatement.setString(1, hospital.getName());
         preparedStatement.setFloat(2, hospital.getReservationPrice());
-        preparedStatement.setInt(3, hospital.getRating());
+        preparedStatement.setFloat(3, hospital.getRating());
         preparedStatement.executeUpdate();
     }
 
@@ -98,17 +99,18 @@ public class Hospital {
 
     public static void displayHospitals(Connection conn) throws SQLException {
         if (count(conn) > 0) {
+            DecimalFormat df = new DecimalFormat("0.00");
             Statement statement = conn.createStatement();
             ResultSet rs = statement.executeQuery("SELECT * FROM hospitals");
             System.out.printf("%15s", "ID |");
-            System.out.printf("%15s", "Name |");
+            System.out.printf("%40s", "Name |");
             System.out.printf("%20s", "Reservation Price |");
             System.out.printf("%15s", "Rating |\n");
             while (rs.next()) {
                 System.out.printf("%15s", rs.getInt("id") + " |");
-                System.out.printf("%15s", rs.getString("Name") + " |");
+                System.out.printf("%40s", rs.getString("Name") + " |");
                 System.out.printf("%20s", rs.getFloat("reservationPrice") + " |");
-                System.out.printf("%15s", rs.getInt("rating") + " |\n");
+                System.out.printf("%15s", df.format(rs.getFloat("rating")) + " |\n");
             }
         }
         else {
@@ -126,7 +128,7 @@ public class Hospital {
         PreparedStatement preparedStatement = conn.prepareStatement("UPDATE hospitals SET name = ?, reservationPrice = ?, rating = ? WHERE id = ?");
         preparedStatement.setString(1, hospital.getName());
         preparedStatement.setFloat(2, hospital.getReservationPrice());
-        preparedStatement.setInt(3, hospital.getRating());
+        preparedStatement.setFloat(3, hospital.getRating());
         preparedStatement.setInt(4, getId());
         preparedStatement.executeUpdate();
     }
@@ -168,4 +170,34 @@ public class Hospital {
         }
         System.out.println("This speciality is not available");
     }
+
+    private ArrayList<Review> getReviews(Connection conn) throws SQLException {
+        ArrayList<Review> reviews = new ArrayList<Review>();
+        Statement statement = conn.createStatement();
+        ResultSet rs = statement.executeQuery("SELECT * FROM reviews WHERE hospitalId = " + getId());
+        while (rs.next()) {
+            Review review = new Review(rs.getInt("id"), rs.getInt("hospitalId"), rs.getInt("userId"), rs.getInt("rating"), rs.getString("content"));
+            reviews.add(review);
+        }
+        return reviews;
+    }
+
+    public void showReviews(Connection conn) throws SQLException {
+        ArrayList<Review> reviews =  getReviews(conn);
+        if (!reviews.isEmpty()) {
+            System.out.printf("%15s", "User |");
+            System.out.printf("%15s", "Rating |");
+            System.out.print(" Content\n");
+            for (Review review : reviews) {
+                User user = User.getUser(conn, review.getUserId());
+                System.out.printf("%15s", user.getUsername() + " |");
+                System.out.printf("%15s", review.getRating()  + " |");
+                System.out.print(" " + review.getContent() + "\n");
+            }
+        }
+        else {
+            System.out.println("No Reviews For This Hospital Yet.");
+        }
+    }
+
 }

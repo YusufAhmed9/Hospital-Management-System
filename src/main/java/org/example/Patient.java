@@ -11,6 +11,12 @@ public class Patient extends User {
         setPassword(password);
     }
 
+    public Patient(int id, String username, String password) {
+        setId(id);
+        setUsername(username);
+        setPassword(password);
+    }
+
     private void editUserInfo(Connection conn) throws SQLException {
         int option;
         String choice;
@@ -45,7 +51,7 @@ public class Patient extends User {
                 while (true) {
                     System.out.print("Enter the modified username: ");
                     modifiedUsername = scanner.nextLine();
-                    user = getUserByUsername(conn, modifiedUsername);
+                    user = getUser(conn, modifiedUsername);
                     if (user == null) {
                         break;
                     }
@@ -58,7 +64,7 @@ public class Patient extends User {
                 preparedStatement.executeUpdate();
                 setUsername(modifiedUsername);
             }
-            else{
+            else {
                 String modifiedPassword;
                 while(true){
                     System.out.print("Enter the modified Password: ");
@@ -116,6 +122,62 @@ public class Patient extends User {
         hospital.displayClinics(choice);
     }
 
+    private void reserve() {
+
+    }
+
+    private void writeReview(Connection conn) throws SQLException {
+        Hospital.displayHospitals(conn);
+        Scanner scanner = new Scanner(System.in);
+        while (true) {
+            System.out.print("Hospital ID To Review: ");
+            int hospitalId = scanner.nextInt();
+            Hospital hospital = Hospital.getHospital(conn, hospitalId);
+            if (hospital != null) {
+                String content;
+                int rating;
+                while (true) {
+                    System.out.print("Rating (Out Of 10) : ");
+                    rating = scanner.nextInt();
+                    scanner.nextLine();
+                    if (rating < 1 || rating > 10) {
+                        System.out.println("Rating Must Be Between 1 and 10.");
+                        continue;
+                    }
+                    break;
+                }
+                while (true) {
+                    System.out.print("Review Content: ");
+                    content = scanner.nextLine();
+                    if (content.isEmpty()) {
+                        System.out.println("Review Content Can't Be Empty.");
+                        continue;
+                    }
+                    break;
+                }
+                Review review = new Review(hospital.getId(), getId(), rating, content);
+                Review.createReview(conn, review);
+                break;
+            }
+            System.out.println("No Hospital With That ID.");
+        }
+    }
+
+    private void showReviews(Connection conn) throws SQLException {
+        Scanner scanner = new Scanner(System.in);
+        Hospital.displayHospitals(conn);
+        while (true) {
+            System.out.print("Hospital ID To Show Reviews For: ");
+            int hospitalId = scanner.nextInt();
+            Hospital hospital = Hospital.getHospital(conn, hospitalId);
+            if (hospital != null) {
+                hospital.showReviews(conn);
+                break;
+            }
+            System.out.println("No Hospital With That ID.");
+        }
+    }
+
     public void Interface(Connection conn) throws SQLException {
         int option;
         Scanner scanner = new Scanner(System.in);
@@ -125,11 +187,14 @@ public class Patient extends User {
         while (true){
             System.out.println("[1]: Edit your information");
             System.out.println("[2]: View hospitals");
-            System.out.println("[3]: Log out");
+            System.out.println("[3]: Reserve");
+            System.out.println("[4]: Write A Review");
+            System.out.println("[5]: Show Reviews");
+            System.out.println("[6]: Log out");
             System.out.print("Choose an option: ");
             option = scanner.nextInt();
 
-            if(option > 3 || option < 1){
+            if(option > 6 || option < 1){
                 System.out.println("Error: Please enter a valid option\n");
                 continue;
             }
@@ -141,6 +206,30 @@ public class Patient extends User {
         }
         else if(option == 2){
              viewHospitals(conn);
+        }
+        else if (option == 3) {
+            if (Hospital.count(conn) > 0) {
+                reserve();
+            }
+            else {
+                System.out.println("No Hospitals To Reserve.");
+            }
+        }
+        else if (option == 4) {
+            if (Hospital.count(conn) > 0) {
+                writeReview(conn);
+            }
+            else {
+                System.out.println("No Hospitals To Review.");
+            }
+        }
+        else if (option == 5) {
+            if (Hospital.count(conn) > 0) {
+                showReviews(conn);
+            }
+            else {
+                System.out.println("No Hospitals To Show Reviews For.");
+            }
         }
     }
 }
