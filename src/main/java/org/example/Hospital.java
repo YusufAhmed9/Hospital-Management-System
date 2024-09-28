@@ -200,4 +200,34 @@ public class Hospital {
         }
     }
 
+    private ArrayList<Reservation> getReservations(Connection conn) throws SQLException {
+        ArrayList<Reservation> reservations = new ArrayList<Reservation>();
+        Statement statement = conn.createStatement();
+        ResultSet rs = statement.executeQuery("SELECT * FROM reservations WHERE hospitalId = " + getId());
+        while (rs.next()) {
+            Reservation reservation = new Reservation(rs.getInt("id"), rs.getInt("hospitalId"), rs.getInt("userId"), rs.getInt("duration"), rs.getFloat("price"));
+            reservations.add(reservation);
+        }
+        return reservations;
+    }
+
+    public void showReservations(Connection conn) throws SQLException {
+        ArrayList<Reservation> reservations =  getReservations(conn);
+        if (!reservations.isEmpty()) {
+            System.out.printf("%15s", "ID |");
+            System.out.printf("%15s", "User |");
+            System.out.printf("%15s", "Duration |");
+            System.out.printf("%15s", "Price |\n");
+            for (Reservation reservation : reservations) {
+                User user = User.getUser(conn, reservation.getUserId());
+                System.out.printf("%15s", reservation.getId() + " |");
+                System.out.printf("%15s", user.getUsername() + " |");
+                System.out.printf("%15s", reservation.getDuration()  + " |");
+                System.out.printf("%15s", reservation.getPrice() + "\n");
+            }
+        }
+        else {
+            System.out.println("No Reservations For This Hospital Yet.");
+        }
+    }
 }
