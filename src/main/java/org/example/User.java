@@ -7,6 +7,7 @@ import java.util.Scanner;
 public class User {
     private String username;
     private String password;
+    private int id;
 
     public User() {
         setUsername("Username");
@@ -16,6 +17,20 @@ public class User {
     public User(String username, String password) {
         setUsername(username);
         setPassword(password);
+    }
+
+    public User(int id,  String username, String password) {
+        setId(id);
+        setUsername(username);
+        setPassword(password);
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public int getId() {
+        return id;
     }
 
     public void setUsername(String username) {
@@ -50,11 +65,20 @@ public class User {
         preparedStatement.executeUpdate();
     }
 
-    public static User getUserByUsername(Connection conn, String username) throws SQLException {
+    public static User getUser(Connection conn, String username) throws SQLException {
         Statement statement = conn.createStatement();
         ResultSet rs = statement.executeQuery("SELECT * FROM users WHERE username = '" + username + "'");
         if (rs.next()) {
-            return new User(rs.getString("username"), rs.getString("password"));
+            return new User(rs.getInt("id"), rs.getString("username"), rs.getString("password"));
+        }
+        return null;
+    }
+
+    public static User getUser(Connection conn, int id) throws SQLException {
+        Statement statement = conn.createStatement();
+        ResultSet rs = statement.executeQuery("SELECT * FROM users WHERE id = " + id);
+        if (rs.next()) {
+            return new User(rs.getInt("id"), rs.getString("username"), rs.getString("password"));
         }
         return null;
     }
@@ -84,7 +108,7 @@ public class User {
                     System.out.println("Username Can't Be Empty.");
                     continue;
                 }
-                User user = getUserByUsername(conn, username);
+                User user = getUser(conn, username);
                 if (user == null) {
                     break;
                 }
@@ -105,7 +129,7 @@ public class User {
                 username = scanner.nextLine();
                 System.out.print("Password: ");
                 password = scanner.nextLine();
-                User user = getUserByUsername(conn, username);
+                User user = getUser(conn, username);
                 if (user != null) {
                     if (user.getPassword().equals(password)) {
                         currentUser = user;
