@@ -75,7 +75,7 @@ public class Hospital {
         Statement statement = conn.createStatement();
         ResultSet rs = statement.executeQuery("SELECT * FROM hospitals WHERE name = '" + name + "'");
         if (rs.next()) {
-            return new Hospital(rs.getInt("id"), rs.getString("name"), rs.getFloat("reservationPrice"), rs.getInt("rating"));
+            return new Hospital(rs.getInt("id"), rs.getString("name"), rs.getFloat("reservationPrice"), rs.getFloat("rating"));
         }
         return null;
     }
@@ -92,7 +92,7 @@ public class Hospital {
         Statement statement = conn.createStatement();
         ResultSet rs = statement.executeQuery("SELECT * FROM hospitals");
         while (rs.next()) {
-            Hospital hospital = new Hospital(rs.getString("name"), rs.getFloat("reservationPrice"), rs.getInt("rating"));
+            Hospital hospital = new Hospital(rs.getString("name"), rs.getFloat("reservationPrice"), rs.getFloat("rating"));
             hospitals.add(hospital);
         }
     }
