@@ -9,6 +9,8 @@ public class Tester {
     public static void testSetup(){
         try {
             conn = DriverManager.getConnection("jdbc:sqlite:hospital.db");
+            Patient p = new Patient(4, "1", "2");
+            p.Interface(conn);
         }
         catch (SQLException e) {
             System.out.println(e.getMessage());
