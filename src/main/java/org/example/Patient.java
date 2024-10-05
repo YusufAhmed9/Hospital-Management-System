@@ -141,7 +141,7 @@ public class Patient extends User {
             }
             else if (option == 2) {
                 System.out.println("Specialities: ");
-                hospital.displaySpecialities();
+                hospital.displaySpecialities(connection);
                 System.out.print("Would you like to choose a speciality ? (y/n): ");
                 scanner.nextLine();
                 choice = scanner.nextLine().toLowerCase();
@@ -229,21 +229,6 @@ public class Patient extends User {
         Review review = new Review(hospital.getId(), getId(), rating, content);
         Review.createReview(conn, review);
     }
-
-//    private void showReviews(Connection conn) throws SQLException {
-//        Scanner scanner = new Scanner(System.in);
-//        Hospital.displayHospitals(conn);
-//        while (true) {
-//            System.out.print("Hospital ID To Show Reviews For: ");
-//            int hospitalId = scanner.nextInt();
-//            Hospital hospital = Hospital.getHospital(conn, hospitalId);
-//            if (hospital != null) {
-//                hospital.showReviews(conn);
-//                break;
-//            }
-//            System.out.println("No Hospital With That ID.");
-//        }
-//    }
 
     private ArrayList<Reservation> getReservations(Connection conn) throws SQLException {
         ArrayList<Reservation> reservations = new ArrayList<Reservation>();

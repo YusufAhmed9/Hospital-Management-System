@@ -10,6 +10,9 @@ public class Tester {
         try {
             conn = DriverManager.getConnection("jdbc:sqlite:hospital.db");
             Patient p = new Patient(4, "1", "2");
+//            Hospital hospital = Hospital.getHospital(conn,"Mostashfa EL maganeen");
+//            Speciality speciality = new Speciality("Dentist", conn);
+//            hospital.addSpeciality(speciality, conn);
             p.Interface(conn);
         }
         catch (SQLException e) {

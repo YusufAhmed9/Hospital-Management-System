@@ -9,7 +9,6 @@ public class Hospital {
     private String name;
     private float reservationPrice;
     private float rating;
-    private ArrayList <Speciality>specialities = new ArrayList();
 
     Hospital(String name, float reservationPrice) {
         setName(name);
@@ -139,36 +138,58 @@ public class Hospital {
         return rs.getInt(1);
     }
 
-    public void addSpeciality(Speciality speciality) {
-        if(specialities.contains(speciality))
+    public void addSpeciality(Speciality speciality, Connection conn) throws SQLException {
+        if (speciality.specialityExists(getId(), conn))
             return;
-        specialities.add(speciality);
+        PreparedStatement preparedStatement = conn.prepareStatement("INSERT INTO HospitalSpeciality(HospitalId, SpecialityId) VALUES(?, ?)");
+        preparedStatement.setInt(1, getId());
+        preparedStatement.setInt(2, speciality.getId());
+        preparedStatement.executeUpdate();
     }
 
     public void addClinic(Clinic clinic, Connection conn) throws SQLException {
-        for(Speciality speciality : specialities) {
-            if (speciality.getName().equals(clinic.getSpeciality(conn).getName())) {
-                speciality.addClinic(clinic);
-                return;
+    }
+
+    public void displaySpecialities(Connection conn) throws SQLException {
+        String query = "SELECT SpecialityId FROM HospitalSpeciality WHERE HospitalId = ?";
+
+        try (PreparedStatement statement = conn.prepareStatement(query)) {
+            statement.setInt(1, getId());
+
+            ResultSet rs = statement.executeQuery();
+
+            while (rs.next()) {
+                int specialityId = rs.getInt("SpecialityId");
+
+                String query1 = "SELECT name FROM Specialities WHERE id = ?";
+
+                try (PreparedStatement statement1 = conn.prepareStatement(query1)) {
+
+                    statement1.setInt(1, specialityId);
+
+                    ResultSet rs1 = statement1.executeQuery();
+
+                    while (rs1.next()) {
+                        String speciality = rs1.getString("name");
+
+                        System.out.println(speciality);
+                    }
+                }
+
+                catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
         }
-        specialities.add(clinic.getSpeciality(conn));
-        clinic.getSpeciality(conn).addClinic(clinic);
-    }
-    public void displaySpecialities() {
-        for(Speciality speciality : specialities) {
-            System.out.println(speciality.getName());
+
+        catch (SQLException e) {
+            e.printStackTrace();
         }
+
     }
 
     public void displayClinics(String speciality) {
-        for(Speciality hospitalSpeciality : specialities) {
-            if(speciality.equals(hospitalSpeciality.getName())) {
-                hospitalSpeciality.displayClinics();
-                return;
-            }
-        }
-        System.out.println("This speciality is not available");
+
     }
 
     private ArrayList<Review> getReviews(Connection conn) throws SQLException {

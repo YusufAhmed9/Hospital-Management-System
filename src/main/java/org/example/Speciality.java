@@ -6,7 +6,6 @@ import java.util.ArrayList;
 public class Speciality {
     private String name;
     private int id;
-    private ArrayList<Clinic> clinics = new ArrayList();
 
     public Speciality(String name, Connection conn) throws SQLException {
         setName(name);
@@ -30,10 +29,15 @@ public class Speciality {
         this.id = id;
     }
 
+    public int getId() {
+        return id;
+    }
+
     private void addSpeciality(String name, Connection conn) throws SQLException {
         PreparedStatement preparedStatement = conn.prepareStatement("INSERT INTO specialities(name) VALUES(?)");
         preparedStatement.setString(1, name);
         preparedStatement.executeUpdate();
+        setId(getSpeciality(conn).getId());
     }
 
     public Speciality getSpeciality(Connection conn) throws SQLException {
@@ -42,15 +46,9 @@ public class Speciality {
         return rs.next() ? new Speciality(rs.getInt("id"), rs.getString("name")) : null;
     }
 
-    public void addClinic(Clinic clinic) {
-        if(clinics.contains(clinic))
-            return;
-        clinics.add(clinic);
-    }
-
-    public void displayClinics() {
-        for(Clinic clinic : clinics) {
-            System.out.println(clinic.toString());
-        }
+    public boolean specialityExists(int HospitalId, Connection conn) throws SQLException {
+        Statement statement = conn.createStatement();
+        ResultSet rs = statement.executeQuery("SELECT * FROM HospitalSpeciality WHERE HospitalId = " + HospitalId + " AND SpecialityId = '" + getId() + "'");
+        return rs.next() ? true : false;
     }
 }
