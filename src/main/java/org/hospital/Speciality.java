@@ -1,7 +1,6 @@
-package org.example;
+package org.hospital;
 
 import java.sql.*;
-import java.util.ArrayList;
 
 public class Speciality {
     private String name;

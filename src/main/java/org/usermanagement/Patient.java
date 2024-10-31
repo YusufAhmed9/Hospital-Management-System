@@ -1,4 +1,6 @@
-package org.example;
+package org.usermanagement;
+
+import org.hospital.Hospital;
 
 import java.sql.*;
 import java.text.DecimalFormat;

@@ -1,4 +1,8 @@
-package org.example;
+package org.hospital;
+
+import org.usermanagement.Reservation;
+import org.usermanagement.Review;
+import org.usermanagement.User;
 
 import java.sql.*;
 import java.text.DecimalFormat;
@@ -7,26 +11,12 @@ import java.util.ArrayList;
 public class Hospital {
     private int id;
     private String name;
-    private float reservationPrice;
     private float rating;
-
-    Hospital(String name, float reservationPrice) {
-        setName(name);
-        setRating(0);
-        setReservationPrice(reservationPrice);
-    }
-
-    Hospital(String name, float reservationPrice, float rating) {
-        setName(name);
-        setRating(rating);
-        setReservationPrice(reservationPrice);
-    }
 
     Hospital(int id, String name, float reservationPrice, float rating) {
         setId(id);
         setName(name);
         setRating(rating);
-        setReservationPrice(reservationPrice);
     }
 
     public void setId(int id) {
@@ -45,13 +35,7 @@ public class Hospital {
         return name;
     }
 
-    public void setReservationPrice(float reservationPrice) {
-        this.reservationPrice = reservationPrice;
-    }
 
-    public float getReservationPrice() {
-        return reservationPrice;
-    }
 
     public void setRating(float rating) {
         this.rating = rating;
@@ -85,15 +69,6 @@ public class Hospital {
         preparedStatement.setFloat(2, hospital.getReservationPrice());
         preparedStatement.setFloat(3, hospital.getRating());
         preparedStatement.executeUpdate();
-    }
-
-    public static void getHospitals(Connection conn, ArrayList<Hospital> hospitals) throws  SQLException {
-        Statement statement = conn.createStatement();
-        ResultSet rs = statement.executeQuery("SELECT * FROM hospitals");
-        while (rs.next()) {
-            Hospital hospital = new Hospital(rs.getString("name"), rs.getFloat("reservationPrice"), rs.getFloat("rating"));
-            hospitals.add(hospital);
-        }
     }
 
     public static void displayHospitals(Connection conn) throws SQLException {
@@ -145,9 +120,6 @@ public class Hospital {
         preparedStatement.setInt(1, getId());
         preparedStatement.setInt(2, speciality.getId());
         preparedStatement.executeUpdate();
-    }
-
-    public void addClinic(Clinic clinic, Connection conn) throws SQLException {
     }
 
     public void displaySpecialities(Connection conn) throws SQLException {

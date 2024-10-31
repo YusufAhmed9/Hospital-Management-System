@@ -1,10 +1,10 @@
-package org.example;
+package org.usermanagement;
 
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.Scanner;
 
 public class User {
+    private String name;
     private String username;
     private String password;
     private int id;
@@ -12,11 +12,6 @@ public class User {
     public User() {
         setUsername("Username");
         setPassword("Password");
-    }
-
-    public User(String username, String password) {
-        setUsername(username);
-        setPassword(password);
     }
 
     public User(int id,  String username, String password) {
@@ -47,15 +42,6 @@ public class User {
 
     public String getPassword() {
         return password;
-    }
-
-    public static void getUsers(Connection conn, ArrayList<User> users) throws SQLException {
-        Statement statement = conn.createStatement();
-        ResultSet rs = statement.executeQuery("SELECT * FROM users");
-        while (rs.next()) {
-            User user = new User(rs.getString("username"), rs.getString("password"));
-            users.add(user);
-        }
     }
 
     public static void createUser(Connection conn, String username, String password) throws SQLException {
@@ -123,7 +109,8 @@ public class User {
                 System.out.println("Password Must Contain At Least 8 Characters");
             }
             createUser(conn, username, password);
-        } else {
+        }
+        else {
             while (true) {
                 System.out.print("Username: ");
                 username = scanner.nextLine();
