@@ -1,5 +1,6 @@
 package org.usermanagement;
 
+import org.example.DatabaseConnection;
 import org.hospital.Hospital;
 
 import java.util.Scanner;
@@ -12,7 +13,7 @@ public class Admin extends User {
         setPassword(user.getPassword());
     }
 
-    private static void addHospital(Connection conn) throws SQLException {
+    private static void addHospital() throws SQLException {
         String name;
         float reservationPrice;
         Scanner scanner = new Scanner(System.in);
@@ -34,32 +35,33 @@ public class Admin extends User {
             }
             break;
         }
-        Hospital hospital = new Hospital(name, reservationPrice);
-        Hospital.createHospital(conn, hospital);
+        Hospital hospital = new Hospital(name);
+        Hospital.createHospital(hospital);
     }
 
-    private static void deleteHospital(Connection conn) throws SQLException {
-        Hospital.displayHospitals(conn);
+    private static void deleteHospital() throws SQLException {
+        Connection connection = DatabaseConnection.getInstance().getConnection();
+        Hospital.displayHospitals();
         Scanner scanner = new Scanner(System.in);
         while (true) {
             System.out.print("Hospital ID To Delete: ");
-            int id = scanner.nextInt();
-            Hospital hospital = Hospital.getHospital(conn, id);
+            String id = scanner.nextLine();
+            Hospital hospital = Hospital.getHospital(id);
             if (hospital != null) {
-                hospital.delete(conn);
+                hospital.delete();
                 break;
             }
             System.out.println("No Hospital With That ID.");
         }
     }
 
-    private static void editHospitalInfo(Connection conn) throws SQLException {
-        Hospital.displayHospitals(conn);
+    private static void editHospitalInfo() throws SQLException {
+        Hospital.displayHospitals();
         Scanner scanner = new Scanner(System.in);
         while (true) {
             System.out.print("Hospital ID To Edit: ");
-            int id = scanner.nextInt();
-            Hospital hospital = Hospital.getHospital(conn, id);
+            String id = scanner.nextLine();
+            Hospital hospital = Hospital.getHospital(id);
             if (hospital != null) {
                 while (true) {
                     int editOption;
@@ -87,7 +89,7 @@ public class Admin extends User {
                             System.out.print("New Reservation Price: ");
                             reservationPrice = scanner.nextFloat();
                             if (reservationPrice > 0) {
-                                hospital.setReservationPrice(reservationPrice);
+//                                hospital.setReservationPrice(reservationPrice);
                                 break;
                             }
                             System.out.println("Reservation Price Can't Be Equal To Or Less Than 0.");
@@ -98,14 +100,14 @@ public class Admin extends User {
                         System.out.println("Invalid Option.");
                     }
                 }
-                hospital.edit(conn, hospital);
+                hospital.edit(hospital);
                 break;
             }
             System.out.println("No Hospital With That ID.");
         }
     }
 
-    public static void adminMenu (Connection conn) throws SQLException {
+    public static void adminMenu () throws SQLException {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Admin Dashboard");
         System.out.println("[ 1 ]: Add Hospital");
@@ -119,26 +121,26 @@ public class Admin extends User {
             scanner.nextLine();
             if (option <= 4 && option >= 1) {
                 if (option == 1) {
-                    addHospital(conn);
+                    addHospital();
                 }
                 else if (option == 2) {
-                    if (Hospital.count(conn) > 0) {
-                        deleteHospital(conn);
+                    if (Hospital.count() > 0) {
+                        deleteHospital();
                     }
                     else {
                         System.out.println("No Hospitals To Delete.");
                     }
                 }
                 else if (option == 3) {
-                    if (Hospital.count(conn) > 0) {
-                      editHospitalInfo(conn);
+                    if (Hospital.count() > 0) {
+                      editHospitalInfo();
                     }
                     else {
                         System.out.println("No Hospitals To Edit.");
                     }
                 }
                 else {
-                    Hospital.displayHospitals(conn);
+                    Hospital.displayHospitals();
                 }
             }
             else if (option == 5) {

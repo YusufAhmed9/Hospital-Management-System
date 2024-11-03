@@ -1,17 +1,18 @@
 package org.usermanagement;
 
+import org.example.DatabaseConnection;
 import org.hospital.Hospital;
 
 import java.sql.*;
 
 public class Review {
-    private int id;
-    private int hospitalId;
-    private int userId;
+    private String  id;
+    private String  hospitalId;
+    private String  userId;
     private int rating;
     private String content;
 
-    public Review(int id, int hospitalId, int userId, int rating, String content) {
+    public Review(String id, String hospitalId, String userId, int rating, String content) {
         setId(id);
         setHospitalId(hospitalId);
         setUserId(userId);
@@ -19,34 +20,34 @@ public class Review {
         setContent(content);
     }
 
-    public Review(int hospitalId, int userId, int rating, String content) {
+    public Review(String hospitalId, String userId, int rating, String content) {
         setRating(rating);
         setHospitalId(hospitalId);
         setUserId(userId);
         setContent(content);
     }
 
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 
-    public int getId() {
+    public String getId() {
         return id;
     }
 
-    public void setHospitalId(int hospitalId) {
+    public void setHospitalId(String hospitalId) {
         this.hospitalId = hospitalId;
     }
 
-    public int getHospitalId() {
+    public String getHospitalId() {
         return hospitalId;
     }
 
-    public void setUserId(int userId) {
+    public void setUserId(String userId) {
         this.userId = userId;
     }
 
-    public int getUserId() {
+    public String getUserId() {
         return userId;
     }
 
@@ -66,19 +67,23 @@ public class Review {
         return content;
     }
 
-    public static void createReview(Connection conn, Review review) throws SQLException {
-        Hospital hospital = Hospital.getHospital(conn, review.getHospitalId());
-        PreparedStatement preparedStatement = conn.prepareStatement("INSERT INTO reviews(userId, hospitalId, rating, content) values(?, ?, ?, ?)");
-        preparedStatement.setInt(1, review.getUserId());
-        preparedStatement.setInt(2, review.getHospitalId());
-        preparedStatement.setInt(3, review.getRating());
-        preparedStatement.setString(4, review.getContent());
+    public void create() throws SQLException {
+        Hospital hospital = Hospital.getHospital(getHospitalId());
+        if (hospital == null) {
+            return;
+        }
+        Connection connection = DatabaseConnection.getInstance().getConnection();
+        PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO review(user_id, hospital_id, rating, content) values(?, ?, ?, ?)");
+        preparedStatement.setString(1, getUserId());
+        preparedStatement.setString(2, getHospitalId());
+        preparedStatement.setInt(3, getRating());
+        preparedStatement.setString(4, getContent());
         preparedStatement.executeUpdate();
-        Statement statement = conn.createStatement();
-        ResultSet rs = statement.executeQuery("SELECT AVG(rating) FROM reviews WHERE hospitalId = " + hospital.getId());
+        Statement statement = connection.createStatement();
+        ResultSet rs = statement.executeQuery("SELECT AVG(rating) FROM review WHERE hospital_id = " + hospital.getId());
         float avgRating = rs.getFloat(1);
         hospital.setRating(avgRating);
-        hospital.edit(conn, hospital);
+        hospital.edit(hospital);
     }
 
     @Override
