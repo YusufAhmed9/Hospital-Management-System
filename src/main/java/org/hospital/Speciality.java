@@ -1,19 +1,20 @@
 package org.hospital;
 
+import org.example.DatabaseConnection;
+
 import java.sql.*;
 
 public class Speciality {
     private String name;
-    private int id;
+    private String id;
 
-    public Speciality(String name, Connection conn) throws SQLException {
+    public Speciality(String name) {
         setName(name);
-        addSpeciality(name, conn);
     }
 
-    private Speciality(int id, String name){
-        setId(id);
+    public Speciality(String name, String id) {
         setName(name);
+        setId(id);
     }
 
     public void setName(String name) {
@@ -24,30 +25,71 @@ public class Speciality {
         return name;
     }
 
-    private void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 
-    public int getId() {
+    public String getId() throws SQLException {
         return id;
     }
 
-    private void addSpeciality(String name, Connection conn) throws SQLException {
-        PreparedStatement preparedStatement = conn.prepareStatement("INSERT INTO specialities(name) VALUES(?)");
-        preparedStatement.setString(1, name);
-        preparedStatement.executeUpdate();
-        setId(getSpeciality(conn).getId());
+    public void addSpeciality() throws SQLException {
+        if (specialityExists())
+            return;
+        Connection connection = DatabaseConnection.getInstance().getConnection();
+        String query2 = "INSERT INTO speciality (name) VALUES (?)";
+        try (PreparedStatement statement2 = connection.prepareStatement(query2)) {
+            statement2.setString(1, getName());
+            statement2.executeUpdate();
+            System.out.println("Speciality added");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw e;
+        }
     }
 
-    public Speciality getSpeciality(Connection conn) throws SQLException {
-        Statement statement = conn.createStatement();
-        ResultSet rs = statement.executeQuery("SELECT * FROM specialities WHERE name = '" + getName() +"'");
-        return rs.next() ? new Speciality(rs.getInt("id"), rs.getString("name")) : null;
+    public boolean specialityExists() throws SQLException {
+        String query = "SELECT * FROM speciality WHERE name = ?";
+        Connection connection = DatabaseConnection.getInstance().getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, getName());
+            ResultSet resultSet = statement.executeQuery();
+            if (resultSet.next())
+                return true;
+            return false;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw e;
+        }
     }
 
-    public boolean specialityExists(int HospitalId, Connection conn) throws SQLException {
-        Statement statement = conn.createStatement();
-        ResultSet rs = statement.executeQuery("SELECT * FROM HospitalSpeciality WHERE HospitalId = " + HospitalId + " AND SpecialityId = '" + getId() + "'");
-        return rs.next() ? true : false;
+    public static Speciality getSpecialityByName(String specialityName) throws SQLException {
+        String query = "SELECT * FROM speciality WHERE name = ?";
+        Connection connection = DatabaseConnection.getInstance().getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, specialityName);
+            ResultSet resultSet = statement.executeQuery();
+            if (resultSet.next())
+                return new Speciality(resultSet.getString("name"), resultSet.getString("id"));
+            return null;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    public static Speciality getSpecialityById(String specialityId) throws SQLException {
+        String query = "SELECT * FROM speciality WHERE id = ?";
+        Connection connection = DatabaseConnection.getInstance().getConnection();
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, specialityId);
+            ResultSet resultSet = statement.executeQuery();
+            if (resultSet.next())
+                return new Speciality(resultSet.getString("name"), resultSet.getString("id"));
+            return null;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw e;
+        }
     }
 }
