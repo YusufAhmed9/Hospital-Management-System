@@ -10,7 +10,7 @@ public class DatabaseConnection {
     private Connection connection;
     private String url = "jdbc:mysql://localhost:3306/hospitalsys";
     private String username = "root";
-    private String password = "password";
+    private String password = "borybory#2005";
     private DatabaseConnection() throws SQLException{
         try {
             this.connection = DriverManager.getConnection(url, username, password);
