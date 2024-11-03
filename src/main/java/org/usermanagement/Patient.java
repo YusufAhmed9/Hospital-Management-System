@@ -1,13 +1,10 @@
 package org.usermanagement;
 
-import org.example.DatabaseConnection;
-import org.hospital.Clinic;
 import org.hospital.Hospital;
 
 import java.sql.*;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Scanner;
 
 public class Patient extends User {
@@ -16,14 +13,13 @@ public class Patient extends User {
         setPassword(password);
     }
 
-    public Patient(String id, String username, String password) {
+    public Patient(int id, String username, String password) {
         setId(id);
         setUsername(username);
         setPassword(password);
     }
 
-    private void editUserInfo() throws SQLException {
-        Connection connection = DatabaseConnection.getInstance().getConnection();
+    private void editUserInfo(Connection conn) throws SQLException {
         int option;
         String choice;
         Scanner scanner = new Scanner(System.in);
@@ -57,14 +53,14 @@ public class Patient extends User {
                 while (true) {
                     System.out.print("Enter the modified username: ");
                     modifiedUsername = scanner.nextLine();
-                    user = getUser(modifiedUsername);
+                    user = getUser(conn, modifiedUsername);
                     if (user == null) {
                         break;
                     }
                     System.out.println("Username already exists.");
                 }
 
-                PreparedStatement preparedStatement = connection.prepareStatement("UPDATE user SET username = ? WHERE username = ?");
+                PreparedStatement preparedStatement = conn.prepareStatement("UPDATE users SET username = ? WHERE username = ?");
                 preparedStatement.setString(1, modifiedUsername);
                 preparedStatement.setString(2, getUsername());
                 preparedStatement.executeUpdate();
@@ -81,7 +77,7 @@ public class Patient extends User {
                     }
                     break;
                 }
-                PreparedStatement preparedStatement = connection.prepareStatement("UPDATE user SET password = ? WHERE username = ?");
+                PreparedStatement preparedStatement = conn.prepareStatement("UPDATE users SET password = ? WHERE username = ?");
                 preparedStatement.setString(1, modifiedPassword);
                 preparedStatement.setString(2, getUsername());
                 preparedStatement.executeUpdate();
@@ -93,15 +89,11 @@ public class Patient extends User {
         while (choice.equals("y"));
     }
 
-    private void viewHospitals() throws SQLException {
-        Connection connection = DatabaseConnection.getInstance().getConnection();
+    private void viewHospitals(Connection connection) throws SQLException {
         int option;
         String choice;
         DecimalFormat df = new DecimalFormat("0.00");
-        Hospital.displayHospitals();
-        if (Hospital.count() == 0) {
-            return;
-        }
+        Hospital.displayHospitals(connection);
         Scanner scanner = new Scanner(System.in);
         System.out.print("Would you like to select a hospital ?(y/n): ");
         choice = scanner.nextLine().toLowerCase();
@@ -113,11 +105,11 @@ public class Patient extends User {
             System.out.print("Enter hospital's name:");
             hospitalName = scanner.nextLine();
 
-            if(Hospital.getHospitalByName(hospitalName) == null) {
+            if(Hospital.getHospital(connection, hospitalName) == null) {
                 System.out.println("Hospital not found\n");
                 continue;
             }
-            hospital = Hospital.getHospitalByName(hospitalName);
+            hospital = Hospital.getHospital(connection, hospitalName);
             break;
         }
         System.out.println("\nName:" + hospital.getName() +
@@ -130,14 +122,14 @@ public class Patient extends User {
             option = scanner.nextInt();
             if (option == 1) {
                 int reviewOption;
-                hospital.showReviews();
+                hospital.showReviews(connection);
                 System.out.println("[1]: Write a review");
                 System.out.println("[2]: Exit");
                 while (true) {
                     System.out.print("Option: ");
                     reviewOption = scanner.nextInt();
                     if (reviewOption == 1) {
-                        writeReview(hospital);
+                        writeReview(connection, hospital);
                         break;
                     }
                     else if (reviewOption == 2) {
@@ -151,7 +143,7 @@ public class Patient extends User {
             }
             else if (option == 2) {
                 System.out.println("Specialities: ");
-                hospital.displaySpecialities();
+                hospital.displaySpecialities(connection);
                 System.out.print("Would you like to choose a speciality ? (y/n): ");
                 scanner.nextLine();
                 choice = scanner.nextLine().toLowerCase();
@@ -169,13 +161,13 @@ public class Patient extends User {
         }
     }
 
-    private void reserve() throws SQLException {
-        Hospital.displayHospitals();
+    private void reserve(Connection conn) throws SQLException {
+        Hospital.displayHospitals(conn);
         Scanner scanner = new Scanner(System.in);
         while (true) {
             System.out.print("Hospital ID To Reserve: ");
-            String hospitalId = scanner.nextLine();
-            Hospital hospital = Hospital.getHospital(hospitalId);
+            int hospitalId = scanner.nextInt();
+            Hospital hospital = Hospital.getHospital(conn, hospitalId);
             if (hospital != null) {
                 int duration;
                 float price;
@@ -187,10 +179,10 @@ public class Patient extends User {
                     }
                     System.out.println("Duration Can't Be Less Than Or Equal To 0.");
                 }
-//                price = duration * hospital.getReservationPrice();
-                Reservation reservation = new Reservation(hospital.getId(), getId(), new Date());
-                reservation.create();
-//                System.out.println("The Price Of Your Reservation At " + hospital.getName() + " Is " + price);
+                price = duration * hospital.getReservationPrice();
+                Reservation reservation = new Reservation(hospital.getId(), getId(), duration, price);
+                Reservation.createReservation(conn, reservation);
+                System.out.println("The Price Of Your Reservation At " + hospital.getName() + " Is " + price);
                 break;
             }
             else {
@@ -199,26 +191,26 @@ public class Patient extends User {
         }
     }
 
-    private void deleteReservation() throws SQLException {
+    private void deleteReservation(Connection conn) throws SQLException {
         Scanner scanner = new Scanner(System.in);
         while (true) {
             System.out.print("Reservation ID To Delete: ");
-            int reservationId = scanner.nextInt();
-            Reservation reservation = Reservation.getReservation(reservationId);
+            int hospitalId = scanner.nextInt();
+            Reservation reservation = Reservation.getReservation(conn, hospitalId);
             if (reservation != null) {
-                reservation.delete();
+                reservation.delete(conn);
                 break;
             }
             System.out.println("No Reservation With That ID.");
         }
     }
 
-    private void writeReview(Hospital hospital) throws SQLException {
+    private void writeReview(Connection conn, Hospital hospital) throws SQLException {
         Scanner scanner = new Scanner(System.in);
         String content;
         int rating;
         while (true) {
-            System.out.print("Rating (Out Of 10): ");
+            System.out.print("Rating (Out Of 10) : ");
             rating = scanner.nextInt();
             scanner.nextLine();
             if (rating < 1 || rating > 10) {
@@ -227,37 +219,45 @@ public class Patient extends User {
             }
             break;
         }
-        System.out.print("Review Content ( Optional ): ");
-        content = scanner.nextLine();
+        while (true) {
+            System.out.print("Review Content: ");
+            content = scanner.nextLine();
+            if (content.isEmpty()) {
+                System.out.println("Review Content Can't Be Empty.");
+                continue;
+            }
+            break;
+        }
         Review review = new Review(hospital.getId(), getId(), rating, content);
-        review.create();
+        Review.createReview(conn, review);
     }
 
-    private ArrayList<Reservation> getReservations() throws SQLException {
-        Connection connection = DatabaseConnection.getInstance().getConnection();
+    private ArrayList<Reservation> getReservations(Connection conn) throws SQLException {
         ArrayList<Reservation> reservations = new ArrayList<Reservation>();
-        Statement statement = connection.createStatement();
-        ResultSet rs = statement.executeQuery("SELECT * FROM reservation WHERE user_id = " + getId());
+        Statement statement = conn.createStatement();
+        ResultSet rs = statement.executeQuery("SELECT * FROM reservations WHERE userId = " + getId());
         while (rs.next()) {
-            Reservation reservation = new Reservation(rs.getString("id"), rs.getString("clinic_id"), rs.getString("user_id"), rs.getDate("reservation_date"));
+            Reservation reservation = new Reservation(rs.getInt("id"), rs.getInt("hospitalId"), rs.getInt("userId"), rs.getInt("duration"), rs.getFloat("price"));
             reservations.add(reservation);
         }
         return reservations;
     }
 
-    private void showReservations() throws SQLException {;
-        ArrayList<Reservation> reservations = getReservations();
+    private void showReservations(Connection conn) throws SQLException {
+        ArrayList<Reservation> reservations = getReservations(conn);
         Scanner scanner = new Scanner(System.in);
         int option;
         if (!reservations.isEmpty()) {
             System.out.printf("%15s", "ID |");
-            System.out.printf("%40s", "Doctor |");
-            System.out.printf("%15s", "Date |\n");
+            System.out.printf("%40s", "Hospital |");
+            System.out.printf("%15s", "Duration |");
+            System.out.printf("%15s", "Price |\n");
             for (Reservation reservation : reservations) {
-                Clinic clinic = Clinic.getClinic(reservation.getClinicId());
+                Hospital hospital = Hospital.getHospital(conn, reservation.getHospitalId());
                 System.out.printf("%15s", reservation.getId() + " |");
-                System.out.printf("%40s", clinic.getDoctorName() + " |");
-                System.out.printf("%15s", reservation.getReservationDate()  + " |");
+                System.out.printf("%40s", hospital.getName() + " |");
+                System.out.printf("%15s", reservation.getDuration()  + " |");
+                System.out.printf("%15s", reservation.getPrice() + " |\n");
             }
             System.out.println("[1]: Cancel a reservation");
             System.out.println("[2]: Exit");
@@ -265,7 +265,7 @@ public class Patient extends User {
             option = scanner.nextInt();
             while (true) {
                 if (option == 1) {
-                    deleteReservation();
+                    deleteReservation(conn);
                     break;
                 }
                 else if (option != 2) {
@@ -278,29 +278,25 @@ public class Patient extends User {
         }
     }
 
-    private ArrayList<Review> getReviews() throws SQLException {
-        Connection connection = DatabaseConnection.getInstance().getConnection();
-        ArrayList<Review> reviews = new ArrayList<>();
-        Statement statement = connection.createStatement();
-        ResultSet rs = statement.executeQuery("SELECT * FROM review WHERE user_id = " + getId());
+    private ArrayList<Review> getReviews(Connection conn) throws SQLException {
+        ArrayList<Review> reviews = new ArrayList<Review>();
+        Statement statement = conn.createStatement();
+        ResultSet rs = statement.executeQuery("SELECT * FROM reviews WHERE userId = " + getId());
         while (rs.next()) {
-            Review review = new Review(rs.getString("id"), rs.getString("hospitalId"), rs.getString("userId"), rs.getInt("rating"), rs.getString("content"));
+            Review review = new Review(rs.getInt("id"), rs.getInt("hospitalId"), rs.getInt("userId"), rs.getInt("rating"), rs.getString("content"));
             reviews.add(review);
         }
         return reviews;
     }
 
-    private void showPatientReviews() throws SQLException {
-        ArrayList<Review> reviews = getReviews();
+    private void showPatientReviews(Connection conn) throws SQLException {
+        ArrayList<Review> reviews = getReviews(conn);
         if (!reviews.isEmpty()) {
             System.out.printf("%40s", "Hospital |");
             System.out.printf("%15s", "Rating |");
             System.out.print(" Content\n");
             for (Review review : reviews) {
-                Hospital hospital = Hospital.getHospital(review.getHospitalId());
-                if (hospital == null) {
-                    return;
-                }
+                Hospital hospital = Hospital.getHospital(conn, review.getHospitalId());
                 System.out.printf("%40s", hospital.getName() + " |");
                 System.out.printf("%15s", review.getRating()  + " |");
                 System.out.print(" " + review.getContent() + "\n");
@@ -311,7 +307,7 @@ public class Patient extends User {
         }
     }
 
-    public void Interface() throws SQLException {
+    public void Interface(Connection conn) throws SQLException {
         int option;
         Scanner scanner = new Scanner(System.in);
         System.out.println("Welcome" + getUsername() + "\n");
@@ -332,16 +328,16 @@ public class Patient extends User {
             break;
         }
         if(option == 1){
-            editUserInfo();
+            editUserInfo(conn);
         }
         else if(option == 2){
-             viewHospitals();
+             viewHospitals(conn);
         }
         else if (option == 3) {
-            showReservations();
+            showReservations(conn);
         }
         else if (option == 4) {
-            showPatientReviews();
+            showPatientReviews(conn);
         }
     }
 }

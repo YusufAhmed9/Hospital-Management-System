@@ -1,7 +1,5 @@
 package org.usermanagement;
 
-import org.example.DatabaseConnection;
-
 import java.sql.*;
 import java.util.Scanner;
 
@@ -9,24 +7,24 @@ public class User {
     private String name;
     private String username;
     private String password;
-    private String id;
+    private int id;
 
     public User() {
         setUsername("Username");
         setPassword("Password");
     }
 
-    public User(String id,  String username, String password) {
+    public User(int id,  String username, String password) {
         setId(id);
         setUsername(username);
         setPassword(password);
     }
 
-    public void setId(String id) {
+    public void setId(int id) {
         this.id = id;
     }
 
-    public String  getId() {
+    public int getId() {
         return id;
     }
 
@@ -53,22 +51,20 @@ public class User {
         preparedStatement.executeUpdate();
     }
 
-    public static User getUserByName(String username) throws SQLException {
-        Connection connection = DatabaseConnection.getInstance().getConnection();
-        Statement statement = connection.createStatement();
-        ResultSet rs = statement.executeQuery("SELECT * FROM user WHERE username = '" + username + "'");
+    public static User getUser(Connection conn, String username) throws SQLException {
+        Statement statement = conn.createStatement();
+        ResultSet rs = statement.executeQuery("SELECT * FROM users WHERE username = '" + username + "'");
         if (rs.next()) {
-            return new User(rs.getString("id"), rs.getString("username"), rs.getString("password"));
+            return new User(rs.getInt("id"), rs.getString("username"), rs.getString("password"));
         }
         return null;
     }
 
-    public static User getUser(String id) throws SQLException {
-        Connection connection = DatabaseConnection.getInstance().getConnection();
-        Statement statement = connection.createStatement();
+    public static User getUser(Connection conn, int id) throws SQLException {
+        Statement statement = conn.createStatement();
         ResultSet rs = statement.executeQuery("SELECT * FROM users WHERE id = " + id);
         if (rs.next()) {
-            return new User(rs.getString("id"), rs.getString("username"), rs.getString("password"));
+            return new User(rs.getInt("id"), rs.getString("username"), rs.getString("password"));
         }
         return null;
     }
@@ -98,7 +94,7 @@ public class User {
                     System.out.println("Username Can't Be Empty.");
                     continue;
                 }
-                User user = getUser(username);
+                User user = getUser(conn, username);
                 if (user == null) {
                     break;
                 }
@@ -120,7 +116,7 @@ public class User {
                 username = scanner.nextLine();
                 System.out.print("Password: ");
                 password = scanner.nextLine();
-                User user = getUser(username);
+                User user = getUser(conn, username);
                 if (user != null) {
                     if (user.getPassword().equals(password)) {
                         currentUser = user;
