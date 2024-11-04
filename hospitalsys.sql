@@ -32,10 +32,10 @@ CREATE TABLE `clinic` (
   `reservation_price` float(10,1) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id` (`id`),
-  KEY `speciality_id` (`speciality_id`),
-  KEY `hospital_id` (`hospital_id`),
-  CONSTRAINT `clinic_ibfk_1` FOREIGN KEY (`speciality_id`) REFERENCES `speciality` (`id`),
-  CONSTRAINT `clinic_ibfk_2` FOREIGN KEY (`hospital_id`) REFERENCES `hospital` (`id`)
+  KEY `clinic_ibfk_1` (`speciality_id`),
+  KEY `clinic_ibfk_2` (`hospital_id`),
+  CONSTRAINT `clinic_ibfk_1` FOREIGN KEY (`speciality_id`) REFERENCES `speciality` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `clinic_ibfk_2` FOREIGN KEY (`hospital_id`) REFERENCES `hospital` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -71,6 +71,7 @@ CREATE TABLE `hospital` (
 
 LOCK TABLES `hospital` WRITE;
 /*!40000 ALTER TABLE `hospital` DISABLE KEYS */;
+INSERT INTO `hospital` VALUES ('Mostshfa el maganeen','HOS001',0.7),('Mostshfa el 3aqleen','HOS002',0.7);
 /*!40000 ALTER TABLE `hospital` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -88,10 +89,10 @@ CREATE TABLE `reservation` (
   `reservation_date` datetime NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id` (`id`),
-  KEY `user_id` (`user_id`),
-  KEY `clinic_id` (`clinic_id`),
-  CONSTRAINT `reservation_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`),
-  CONSTRAINT `reservation_ibfk_2` FOREIGN KEY (`clinic_id`) REFERENCES `clinic` (`id`)
+  KEY `reservation_ibfk_1` (`user_id`),
+  KEY `reservation_ibfk_2` (`clinic_id`),
+  CONSTRAINT `reservation_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `reservation_ibfk_2` FOREIGN KEY (`clinic_id`) REFERENCES `clinic` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -121,8 +122,8 @@ CREATE TABLE `review` (
   UNIQUE KEY `id` (`id`),
   UNIQUE KEY `hospital_id` (`hospital_id`),
   UNIQUE KEY `user_id` (`user_id`),
-  CONSTRAINT `review_ibfk_1` FOREIGN KEY (`hospital_id`) REFERENCES `hospital` (`id`),
-  CONSTRAINT `review_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
+  CONSTRAINT `review_ibfk_1` FOREIGN KEY (`hospital_id`) REFERENCES `hospital` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `review_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -157,6 +158,7 @@ CREATE TABLE `speciality` (
 
 LOCK TABLES `speciality` WRITE;
 /*!40000 ALTER TABLE `speciality` DISABLE KEYS */;
+INSERT INTO `speciality` VALUES ('vet','VET001');
 /*!40000 ALTER TABLE `speciality` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -196,4 +198,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-11-01  0:39:00
+-- Dump completed on 2024-11-04  2:02:00

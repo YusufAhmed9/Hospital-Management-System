@@ -15,7 +15,7 @@ public class Clinic {
     private String specialityId;
     private float reservationPrice;
 
-    public Clinic(String doctorName, String specialityId, String id, String hospitalId, float reservationPrice) {
+    public Clinic(String doctorName, String specialityId, String id, String hospitalId, float reservationPrice) throws SQLException {
         setDoctorName(doctorName);
         setSpecialityId(specialityId);
         setId(id);
