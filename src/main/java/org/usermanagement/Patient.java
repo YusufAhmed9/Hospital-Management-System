@@ -2,7 +2,9 @@ package org.usermanagement;
 
 import org.example.DatabaseConnection;
 import org.hospital.Clinic;
+import org.hospital.DayOfWeek;
 import org.hospital.Hospital;
+import org.hospital.Speciality;
 
 import java.sql.*;
 import java.text.DecimalFormat;
@@ -11,9 +13,10 @@ import java.util.Date;
 import java.util.Scanner;
 
 public class Patient extends User {
-    public Patient(String username, String password) {
-        setUsername(username);
-        setPassword(password);
+
+    public Patient(User user){
+        setUsername(user.getUsername());
+        setPassword(user.getPassword());
     }
 
     public Patient(String id, String username, String password) {
@@ -94,7 +97,6 @@ public class Patient extends User {
     }
 
     private void viewHospitals() throws SQLException {
-        Connection connection = DatabaseConnection.getInstance().getConnection();
         int option;
         String choice;
         DecimalFormat df = new DecimalFormat("0.00");
@@ -150,23 +152,31 @@ public class Patient extends User {
                 break;
             }
             else if (option == 2) {
+                if (!hospital.hasSpecialities()) {
+                    System.out.println("No Specialities For This Hospital");
+                    return;
+                }
                 System.out.println("Specialities: ");
                 hospital.displaySpecialities();
                 System.out.print("Would you like to choose a speciality ? (y/n): ");
                 scanner.nextLine();
                 choice = scanner.nextLine().toLowerCase();
-                System.out.print(choice);
                 if(choice.equals("n"))
                     return;
                 System.out.print("Enter speciality: ");
                 choice = scanner.nextLine();
-                hospital.displayClinics(choice);
+                viewClinics(hospital, choice);
                 break;
             }
             else {
                 System.out.println("Invalid option.");
             }
         }
+    }
+
+    private void viewClinics(Hospital hospital, String specialityName) throws SQLException {
+        Speciality speciality = Speciality.getSpecialityByName(specialityName);
+        hospital.displayClinics(speciality.getId());
     }
 
     private void reserve() throws SQLException {
@@ -187,10 +197,8 @@ public class Patient extends User {
                     }
                     System.out.println("Duration Can't Be Less Than Or Equal To 0.");
                 }
-//                price = duration * hospital.getReservationPrice();
-                Reservation reservation = new Reservation(hospital.getId(), getId(), new Date());
-                reservation.create();
-//                System.out.println("The Price Of Your Reservation At " + hospital.getName() + " Is " + price);
+//                Reservation reservation = new Reservation(hospital.getId(), getId(), new Date());
+//                reservation.create();
                 break;
             }
             else {
@@ -239,7 +247,7 @@ public class Patient extends User {
         Statement statement = connection.createStatement();
         ResultSet rs = statement.executeQuery("SELECT * FROM reservation WHERE user_id = " + getId());
         while (rs.next()) {
-            Reservation reservation = new Reservation(rs.getString("id"), rs.getString("clinic_id"), rs.getString("user_id"), rs.getDate("reservation_date"));
+            Reservation reservation = new Reservation(rs.getString("id"), rs.getString("clinic_id"), rs.getString("user_id"), DayOfWeek.valueOf(rs.getString("reservation_day")), rs.getTime("reservation_time").toLocalTime());
             reservations.add(reservation);
         }
         return reservations;
@@ -257,7 +265,7 @@ public class Patient extends User {
                 Clinic clinic = Clinic.getClinic(reservation.getClinicId());
                 System.out.printf("%15s", reservation.getId() + " |");
                 System.out.printf("%40s", clinic.getDoctorName() + " |");
-                System.out.printf("%15s", reservation.getReservationDate()  + " |");
+                System.out.printf("%15s", reservation.getReservationDay() + " " +  reservation.getReservationTime() + " |");
             }
             System.out.println("[1]: Cancel a reservation");
             System.out.println("[2]: Exit");

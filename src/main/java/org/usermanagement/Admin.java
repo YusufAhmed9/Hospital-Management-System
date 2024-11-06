@@ -1,8 +1,8 @@
 package org.usermanagement;
 
-import org.example.DatabaseConnection;
 import org.hospital.Hospital;
 
+import java.text.DecimalFormat;
 import java.util.Scanner;
 import java.sql.*;
 
@@ -14,140 +14,133 @@ public class Admin extends User {
     }
 
     private static void addHospital() throws SQLException {
-        String name;
-        float reservationPrice;
+        String hospitalName;
         Scanner scanner = new Scanner(System.in);
         while (true) {
-            System.out.print("Hospital Name: ");
-            name = scanner.nextLine();
-            if (name.isEmpty()) {
-                System.out.println("Name Can't Be Empty.");
-                continue;
-            }
-            break;
-        }
-        while (true) {
-            System.out.print("Reservation Price: ");
-            reservationPrice = scanner.nextFloat();
-            if (reservationPrice <= 0) {
-                System.out.println("Price Can't Be Equal To Or Less Than 0.");
-                continue;
-            }
-            break;
-        }
-        Hospital hospital = new Hospital(name);
-        Hospital.createHospital(hospital);
-    }
-
-    private static void deleteHospital() throws SQLException {
-        Connection connection = DatabaseConnection.getInstance().getConnection();
-        Hospital.displayHospitals();
-        Scanner scanner = new Scanner(System.in);
-        while (true) {
-            System.out.print("Hospital ID To Delete: ");
-            String id = scanner.nextLine();
-            Hospital hospital = Hospital.getHospital(id);
-            if (hospital != null) {
-                hospital.delete();
+            System.out.print("Enter Hospital Name: ");
+            hospitalName = scanner.nextLine();
+            if (Hospital.getHospitalByName(hospitalName) == null) {
+                System.out.println("Hospital Added.");
                 break;
             }
-            System.out.println("No Hospital With That ID.");
+            System.out.println("A Hospital With That Name Already Exists.");
         }
+        Hospital hospital = new Hospital(hospitalName);
+        hospital.addHospital();
     }
 
-    private static void editHospitalInfo() throws SQLException {
+    private void viewClinics(Hospital hospital) throws SQLException {
+        hospital.displayClinics();
+
+    }
+
+    private void viewHospitals() throws SQLException {
+        int option;
+        String choice;
         Hospital.displayHospitals();
+        if (Hospital.count() == 0) {
+            return;
+        }
         Scanner scanner = new Scanner(System.in);
-        while (true) {
-            System.out.print("Hospital ID To Edit: ");
-            String id = scanner.nextLine();
-            Hospital hospital = Hospital.getHospital(id);
-            if (hospital != null) {
-                while (true) {
-                    int editOption;
-                    System.out.println("[ 1 ]: Edit Name");
-                    System.out.println("[ 2 ]: Edit Reservation Price");
-                    System.out.print("Option: ");
-                    editOption = scanner.nextInt();
-                    if (editOption == 1) {
-                        scanner.nextLine();
-                        String name;
-                        while (true) {
-                            System.out.print("New Name: ");
-                            name = scanner.nextLine();
-                            if (!name.isEmpty()) {
-                                hospital.setName(name);
-                                break;
-                            }
-                            System.out.println("Name Can't Be Empty.");
-                        }
-                        break;
-                    }
-                    else if (editOption == 2) {
-                        float reservationPrice;
-                        while (true) {
-                            System.out.print("New Reservation Price: ");
-                            reservationPrice = scanner.nextFloat();
-                            if (reservationPrice > 0) {
-//                                hospital.setReservationPrice(reservationPrice);
-                                break;
-                            }
-                            System.out.println("Reservation Price Can't Be Equal To Or Less Than 0.");
-                        }
-                        break;
-                    }
-                    else {
-                        System.out.println("Invalid Option.");
-                    }
-                }
-                hospital.edit(hospital);
-                break;
+        System.out.print("Would you like to select or add a hospital ?(y/a/n): ");
+        choice = scanner.nextLine().toLowerCase();
+        if(choice.equals("n"))
+            return;
+        if (choice.equals("a")) {
+            addHospital();
+            return;
+        }
+        Hospital hospital;
+        String hospitalName;
+        while(true) {
+            System.out.print("Enter hospital's name: ");
+            hospitalName = scanner.nextLine();
+            System.out.println(hospitalName);
+            if(Hospital.getHospitalByName(hospitalName) == null) {
+                System.out.println("Hospital not found\n");
+                continue;
             }
-            System.out.println("No Hospital With That ID.");
+            hospital = Hospital.getHospitalByName(hospitalName);
+            break;
+        }
+        System.out.println("[ 1 ]: Delete Hospital");
+        System.out.println("[ 2 ]: Edit Hospital Info");
+        System.out.println("[ 3 ]: Display Clinics");
+        System.out.println("[ 4 ]: Exit");
+        System.out.print("Option: ");
+        option = scanner.nextInt();
+        outerLoop:
+        while (true) {
+            switch (option) {
+                case 1:
+                    hospital.delete();
+                    System.out.println("Hospital Deleted.");
+                    break outerLoop;
+                case 2:
+                    editHospitalInfo(hospital);
+                    break outerLoop;
+                case 3:
+                    viewClinics(hospital);
+                    break outerLoop;
+                case 4:
+                    break outerLoop;
+                default:
+                    System.out.println("Invalid Option.");
+            }
         }
     }
 
-    public static void adminMenu () throws SQLException {
+    private static void editHospitalInfo(Hospital hospital) throws SQLException {
+        Scanner scanner = new Scanner(System.in);
+        int option;
+        System.out.println("[ 1 ]: Edit Name");
+        System.out.println("[ 2 ]: Exit");
+        System.out.print("Option: ");
+        option = scanner.nextInt();
+        outerLoop:
+        while (true) {
+            switch (option) {
+                case 1:
+                    String hospitalName;
+                    while (true) {
+                        System.out.print("Enter Hospital New Name: ");
+                        hospitalName = scanner.nextLine();
+                        if (Hospital.getHospitalByName(hospitalName) == null) {
+                            break;
+                        }
+                        System.out.println("A Hospital With That Name Already Exists.");
+                    }
+                    hospital.setName(hospitalName);
+                case 2:
+                    break outerLoop;
+                default:
+                    System.out.println("Invalid Option.");
+            }
+        }
+    }
+
+    public void adminMenu () throws SQLException {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Admin Dashboard");
-        System.out.println("[ 1 ]: Add Hospital");
-        System.out.println("[ 2 ]: Delete Hospital");
-        System.out.println("[ 3 ]: Edit Hospital Info");
-        System.out.println("[ 4 ]: Display All Hospitals");
-        System.out.println("[ 5 ]: Exit");
+        System.out.println("[ 1 ]: Display All Hospitals");
+        System.out.println("[ 2 ]: Display All Clinics");
+        System.out.println("[ 3 ]: Exit");
+        outerLoop:
         while (true) {
             System.out.print("Option: ");
             int option = scanner.nextInt();
             scanner.nextLine();
-            if (option <= 4 && option >= 1) {
-                if (option == 1) {
-                    addHospital();
-                }
-                else if (option == 2) {
-                    if (Hospital.count() > 0) {
-                        deleteHospital();
-                    }
-                    else {
-                        System.out.println("No Hospitals To Delete.");
-                    }
-                }
-                else if (option == 3) {
-                    if (Hospital.count() > 0) {
-                      editHospitalInfo();
-                    }
-                    else {
-                        System.out.println("No Hospitals To Edit.");
-                    }
-                }
-                else {
-                    Hospital.displayHospitals();
-                }
-            }
-            else if (option == 5) {
-                break;
-            }
-            else {
-                System.out.println("Invalid Option.");
+            switch (option) {
+                case 1:
+                    viewHospitals();
+                    break outerLoop;
+                case 2:
+//                    Clinic.displayClinics();
+                    break outerLoop;
+                case 3:
+                    break outerLoop;
+                default:
+                    System.out.println("Invalid Option.");
             }
         }
     }
