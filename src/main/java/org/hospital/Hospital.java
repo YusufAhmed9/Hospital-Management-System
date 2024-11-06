@@ -5,20 +5,22 @@ import org.usermanagement.Reservation;
 import org.usermanagement.Review;
 import org.usermanagement.User;
 
+import javax.security.sasl.SaslClient;
 import java.sql.*;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class Hospital {
     private String id;
     private String name;
     private float rating;
 
-    public Hospital(String name) {
+    public Hospital(String name) throws SQLException {
         setName(name);
     }
 
-    public Hospital(String id, String name, float rating) {
+    public Hospital(String id, String name, float rating) throws SQLException {
         setId(id);
         setName(name);
         setRating(rating);
@@ -32,7 +34,13 @@ public class Hospital {
         return id;
     }
 
-    public void setName(String name) {
+    public void setName(String name) throws SQLException {
+        Scanner scanner = new Scanner(System.in);
+        while (!isValidHospitalName(name)) {
+            System.out.println("Hospital Name Can't Be Empty.");
+            System.out.print("Enter Hospital Name: ");
+            name = scanner.nextLine();
+        }
         this.name = name;
     }
 
@@ -60,26 +68,34 @@ public class Hospital {
     }
 
     public static Hospital getHospitalByName(String name) throws SQLException {
+        String query = "SELECT * FROM hospital WHERE name = ?";
         Connection connection = DatabaseConnection.getInstance().getConnection();
-        Statement statement = connection.createStatement();
-        ResultSet rs = statement.executeQuery("SELECT * FROM hospital WHERE name = '" + name + "'");
+        PreparedStatement preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setString(1,name);
+        ResultSet rs = preparedStatement.executeQuery();
         if (rs.next()) {
             return new Hospital(rs.getString("id"), rs.getString("name"), rs.getFloat("rating"));
         }
         return null;
     }
 
-    public static void createHospital(Hospital hospital) throws SQLException {
+    public void addHospital() throws SQLException {
         Connection connection =  DatabaseConnection.getInstance().getConnection();
-        PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO hospitals(name, reservationPrice, rating) values(?, ?, ?)");
-        preparedStatement.setString(1, hospital.getName());
-        preparedStatement.setFloat(3, hospital.getRating());
+        PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO hospital(name, rating) values(?, ?)");
+        preparedStatement.setString(1, getName());
+        preparedStatement.setFloat(2, getRating());
         preparedStatement.executeUpdate();
+        Hospital hospital = getHospitalByName(getName());
+        if (hospital != null) {
+            setId(hospital.getId());
+        }
     }
 
     public static void displayHospitals() throws SQLException {
         Connection connection = DatabaseConnection.getInstance().getConnection();
         if (count() > 0) {
+            int option;
+            Scanner scanner = new Scanner(System.in);
             DecimalFormat df = new DecimalFormat("0.00");
             Statement statement = connection.createStatement();
             ResultSet rs = statement.executeQuery("SELECT * FROM hospital");
@@ -88,7 +104,7 @@ public class Hospital {
             System.out.printf("%15s", "Rating |\n");
             while (rs.next()) {
                 System.out.printf("%15s", rs.getString("id") + " |");
-                System.out.printf("%40s", rs.getString("Name") + " |");
+                System.out.printf("%40s", rs.getString("name") + " |");
                 System.out.printf("%15s", df.format(rs.getFloat("rating")) + " |\n");
             }
         }
@@ -124,46 +140,104 @@ public class Hospital {
     }
 
     public void displaySpecialities() throws SQLException {
-        Connection connection = DatabaseConnection.getInstance().getConnection();
-        String query = "SELECT SpecialityId FROM HospitalSpeciality WHERE hospital_id = ?";
-
-        try (PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setString(1, getId());
-
-            ResultSet rs = statement.executeQuery();
-
-            while (rs.next()) {
-                int specialityId = rs.getInt("SpecialityId");
-
-                String query1 = "SELECT name FROM Specialities WHERE id = ?";
-
-                try (PreparedStatement statement1 = connection.prepareStatement(query1)) {
-
-                    statement1.setInt(1, specialityId);
-
-                    ResultSet rs1 = statement1.executeQuery();
-
-                    while (rs1.next()) {
-                        String speciality = rs1.getString("name");
-
-                        System.out.println(speciality);
-                    }
-                }
-
-                catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
+        ArrayList<Speciality> specialities = getSpecialities();
+        if (specialities.isEmpty()) {
+            System.out.println("No Specialities For This Hospital");
+            return;
         }
-
-        catch (SQLException e) {
-            e.printStackTrace();
+        System.out.printf("%30s", "Speciality Name |\n");
+        for (Speciality speciality : specialities) {
+            System.out.printf("%30s", speciality.getName() + " |\n");
         }
-
     }
 
-    public void displayClinics(String speciality) {
+    private ArrayList<Speciality> getSpecialities() throws SQLException {
+        ArrayList<Speciality> specialities = new ArrayList<Speciality>();
+        Connection connection = DatabaseConnection.getInstance().getConnection();
+        String query = "SELECT * FROM speciality JOIN clinic ON speciality.id = clinic.speciality_id WHERE clinic.hospital_id = ?";
+        PreparedStatement preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setString(1, getId());
+        ResultSet resultSet = preparedStatement.executeQuery();
+        while (resultSet.next()) {
+            Speciality speciality = new Speciality(resultSet.getString("name"), resultSet.getString("id"));
+            specialities.add(speciality);
+        }
+        return specialities;
+    }
 
+    public void displayClinics(String specialityId) throws SQLException {
+        ArrayList<Clinic> clinics = getClinics(specialityId);
+        if (clinics.isEmpty()) {
+            System.out.println("No Clinics Found For This Hospital.");
+            return;
+        }
+        System.out.printf("%30s", "Doctor Name |");
+        System.out.printf("%15s", "Hospital |");
+        System.out.printf("%15s", "Speciality |");
+        System.out.print(" Reservation Price\n");
+        for (Clinic clinic : clinics) {
+            System.out.printf("%30s", clinic.getDoctorName() + " |");
+            System.out.printf("%15s", Hospital.getHospital(clinic.getHospitalId()).getName()  + " |");
+            System.out.printf("%15s", Speciality.getSpecialityById(clinic.getSpecialityId()).getName()  + " |");
+            System.out.print(" " + clinic.getReservationPrice() + "\n");
+        }
+    }
+
+    public void displayClinics() throws SQLException {
+        ArrayList<Clinic> clinics = getClinics();
+        if (clinics.isEmpty()) {
+            System.out.println("No Clinics Found For This Hospital.");
+            return;
+        }
+        System.out.printf("%30s", "Doctor Name |");
+        System.out.printf("%15s", "Hospital |");
+        System.out.printf("%15s", "Speciality |");
+        System.out.print(" Reservation Price\n");
+        for (Clinic clinic : clinics) {
+            System.out.printf("%30s", clinic.getDoctorName() + " |");
+            System.out.printf("%15s", Hospital.getHospital(clinic.getHospitalId()).getName()  + " |");
+            System.out.printf("%15s", Speciality.getSpecialityById(clinic.getSpecialityId()).getName()  + " |");
+            System.out.print(" " + clinic.getReservationPrice() + "\n");
+        }
+    }
+
+    private ArrayList<Clinic> getClinics() throws SQLException {
+        Connection connection = DatabaseConnection.getInstance().getConnection();
+        ArrayList<Clinic> clinics = new ArrayList<Clinic>();
+        PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM clinic WHERE hospital_id = ?");
+        preparedStatement.setString(1, getId());
+        ResultSet rs = preparedStatement.executeQuery();
+        while (rs.next()) {
+            Clinic clinic = new Clinic(
+                        rs.getString("doctor_name"),
+                        rs.getString("speciality_id"),
+                        rs.getString("id"),
+                        rs.getString("hospital_id"),
+                        rs.getFloat("reservation_price")
+                    );
+            clinics.add(clinic);
+        }
+        return clinics;
+    }
+
+    private ArrayList<Clinic> getClinics(String specialityId) throws SQLException {
+        Connection connection = DatabaseConnection.getInstance().getConnection();
+        ArrayList<Clinic> clinics = new ArrayList<Clinic>();
+        PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM clinic WHERE hospital_id = ? AND speciality_id = ?");
+        preparedStatement.setString(1, getId());
+        preparedStatement.setString(2, specialityId);
+        ResultSet rs = preparedStatement.executeQuery();
+        while (rs.next()) {
+            Clinic clinic = new Clinic(
+                    rs.getString("doctor_name"),
+                    rs.getString("speciality_id"),
+                    rs.getString("id"),
+                    rs.getString("hospital_id"),
+                    rs.getFloat("reservation_price")
+            );
+            clinics.add(clinic);
+        }
+        return clinics;
     }
 
     private ArrayList<Review> getReviews() throws SQLException {
@@ -204,7 +278,7 @@ public class Hospital {
         Statement statement = connection.createStatement();
         ResultSet rs = statement.executeQuery("SELECT * FROM reservations WHERE clinic = " + getId());
         while (rs.next()) {
-            Reservation reservation = new Reservation(rs.getString("id"), rs.getString("clinic_id"), rs.getString("user_id"), rs.getDate("reservation_date"));
+            Reservation reservation = new Reservation(rs.getString("id"), rs.getString("clinic_id"), rs.getString("user_id"), DayOfWeek.valueOf(rs.getString("reservation_day")), rs.getTime("reservation_time").toLocalTime());
             reservations.add(reservation);
         }
         return reservations;
@@ -224,5 +298,18 @@ public class Hospital {
         else {
             System.out.println("No Reservations For This Hospital Yet.");
         }
+    }
+
+    public boolean isValidHospitalName(String hospitalName) {
+        return !hospitalName.isEmpty();
+    }
+
+    public boolean hasSpecialities() throws SQLException {
+        Connection connection = DatabaseConnection.getInstance().getConnection();
+        String query = "SELECT * FROM speciality JOIN clinic ON speciality.id = clinic.speciality_id WHERE clinic.hospital_id = ?";
+        PreparedStatement preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setString(1, getId());
+        ResultSet resultSet = preparedStatement.executeQuery();
+        return resultSet.next();
     }
 }

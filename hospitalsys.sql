@@ -1,10 +1,8 @@
-CREATE DATABASE  IF NOT EXISTS `hospitalsys` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `hospitalsys`;
 -- MySQL dump 10.13  Distrib 8.0.38, for Win64 (x86_64)
 --
--- Host: 127.0.0.1    Database: hospitalsys
+-- Host: localhost    Database: hospitalsys
 -- ------------------------------------------------------
--- Server version	8.0.39
+-- Server version	8.0.38
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -45,6 +43,7 @@ CREATE TABLE `clinic` (
 
 LOCK TABLES `clinic` WRITE;
 /*!40000 ALTER TABLE `clinic` DISABLE KEYS */;
+INSERT INTO `clinic` VALUES ('test','CLINIC001','VET001','HOS003',200.0),('test','CLINIC002','VET001','HOS003',200.0);
 /*!40000 ALTER TABLE `clinic` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
@@ -72,6 +71,33 @@ DELIMITER ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
+-- Table structure for table `clinic_availability`
+--
+
+DROP TABLE IF EXISTS `clinic_availability`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `clinic_availability` (
+  `clinic_id` varchar(255) NOT NULL,
+  `day` enum('Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday') NOT NULL,
+  `start_time` time NOT NULL,
+  `end_time` time NOT NULL,
+  PRIMARY KEY (`clinic_id`,`day`),
+  CONSTRAINT `clinic_availability_ibfk_1` FOREIGN KEY (`clinic_id`) REFERENCES `clinic` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `clinic_availability`
+--
+
+LOCK TABLES `clinic_availability` WRITE;
+/*!40000 ALTER TABLE `clinic_availability` DISABLE KEYS */;
+INSERT INTO `clinic_availability` VALUES ('CLINIC001','Sunday','09:00:00','15:00:00'),('CLINIC001','Monday','09:00:00','15:00:00');
+/*!40000 ALTER TABLE `clinic_availability` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `hospital`
 --
 
@@ -94,7 +120,7 @@ CREATE TABLE `hospital` (
 
 LOCK TABLES `hospital` WRITE;
 /*!40000 ALTER TABLE `hospital` DISABLE KEYS */;
-INSERT INTO `hospital` VALUES ('Mostshfa el maganeen','HOS001',0.7),('Mostshfa el 3aqleen','HOS002',0.7);
+INSERT INTO `hospital` VALUES ('Mostshfa el maganeen','HOS001',0.7),('Mostshfa el 3aqleen','HOS002',0.7),('a','HOS003',0.0);
 /*!40000 ALTER TABLE `hospital` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
@@ -132,7 +158,8 @@ CREATE TABLE `reservation` (
   `id` varchar(255) NOT NULL,
   `user_id` varchar(255) NOT NULL,
   `clinic_id` varchar(255) NOT NULL,
-  `reservation_date` datetime NOT NULL,
+  `reservation_day` enum('Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday') DEFAULT NULL,
+  `reservation_time` time DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id` (`id`),
   KEY `reservation_ibfk_1` (`user_id`),
@@ -303,6 +330,7 @@ CREATE TABLE `user` (
 
 LOCK TABLES `user` WRITE;
 /*!40000 ALTER TABLE `user` DISABLE KEYS */;
+INSERT INTO `user` VALUES ('a','aa','123','A001'),('a','a','a','P001');
 /*!40000 ALTER TABLE `user` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
@@ -354,4 +382,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-11-05 13:30:04
+-- Dump completed on 2024-11-06 23:00:50
